@@ -2,6 +2,7 @@ package hu.unimiskolc.iit.distsys;
 
 import hu.mta.sztaki.lpds.cloud.simulator.Timed;
 import hu.mta.sztaki.lpds.cloud.simulator.iaas.PhysicalMachine;
+import hu.mta.sztaki.lpds.cloud.simulator.iaas.PhysicalMachine.ResourceAllocation;
 import hu.mta.sztaki.lpds.cloud.simulator.iaas.VirtualMachine;
 import hu.mta.sztaki.lpds.cloud.simulator.iaas.constraints.ConstantConstraints;
 import hu.mta.sztaki.lpds.cloud.simulator.iaas.constraints.ResourceConstraints;
@@ -39,10 +40,15 @@ public class VMC extends ExercisesBase implements VMCreationApproaches {
 		
 		ResourceConstraints rc = new ConstantConstraints(0.1, 0.1, false, 16);
 		 
-		phMach.allocateResources(rc, false, 100);
+		 ResourceAllocation res = phMach.allocateResources(rc, false, 10000);
 		
 		VirtualMachine vm = new VirtualMachine(va);
-		//phMach.deployVM(vm, rc, phMach.localDisk);
+		phMach.deployVM(vm, res, phMach.localDisk);
+		
+		ResourceAllocation res2 = phMach.allocateResources(rc, false, 10000);
+		
+		VirtualMachine vm2 = new VirtualMachine(va);
+		phMach.deployVM(vm2, res2, phMach.localDisk);
 		
 		Timed.simulateUntilLastEvent();
 	}
