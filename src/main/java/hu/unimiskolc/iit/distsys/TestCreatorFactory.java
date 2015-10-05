@@ -41,6 +41,7 @@ public class TestCreatorFactory {
 
 	public static FillInAllPMs getPMFiller()
 			throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+		System.setProperty("hu.unimiskolc.iit.distsys.PMFiller", "hu.unimiskolc.iit.distsys.PMFiller");
 		return (FillInAllPMs) Class.forName(System.getProperty("hu.unimiskolc.iit.distsys.PMFiller"))
 				.newInstance();
 	}
