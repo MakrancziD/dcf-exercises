@@ -51,6 +51,7 @@ import org.apache.commons.lang3.RandomUtils;
 public class ExercisesBase {
 	public static final HashMap<String, Integer> latencyMap = new HashMap<String, Integer>();
 	public static final int maxCoreCount = 64;
+	public static final double minProcessingCap = 4000000; // 4Mflop/ms
 	public static final double maxProcessingCap = 5000000; // 5Mflop/ms
 	public static final long maxMem = 256l * 1024 * 1024 * 1024; // 256 GB
 	public static final long minMem = 1024l * 1024 * 1024; // 1 GB;
@@ -83,24 +84,49 @@ public class ExercisesBase {
 	private static ArrayList<IaaSForwarder> ifs = new ArrayList<IaaSForwarder>();
 	public static List<IaaSForwarder> iaasforwarders = Collections.unmodifiableList(ifs);
 
+	/**
+	 * Generates a new name for a networked entity and registers it in the
+	 * network
+	 * 
+	 * @param prefix
+	 * @return
+	 */
 	public static String genNewName(String prefix) {
 		String newName = prefix + "-" + nameID++;
 		latencyMap.put(newName, RandomUtils.nextInt(minLatency, maxLatency));
 		return newName;
 	}
 
+	/**
+	 * Constructs a repository with a bandwidth and storage multiplier compared
+	 * to the PM related class wide constants defined above
+	 * 
+	 * @param multiplier
+	 * @return
+	 */
 	public static Repository getNewRepository(final long multiplier) {
 		final long networkBW = RandomUtils.nextLong(multiplier * minPMInBW, multiplier * maxPMInBW);
 		return new Repository(RandomUtils.nextLong(multiplier * minDisk, multiplier * maxDisk), genNewName("PM"),
 				networkBW, networkBW, networkBW / 2, latencyMap);
 	}
 
+	/**
+	 * Generates a random physical machine (and registers it in the network),
+	 * the generated PM is going to have resources within the limits of the
+	 * class wide constants
+	 * 
+	 * @return
+	 * @throws SecurityException
+	 * @throws InstantiationException
+	 * @throws IllegalAccessException
+	 * @throws NoSuchFieldException
+	 */
 	public static PhysicalMachine getNewPhysicalMachine()
 			throws SecurityException, InstantiationException, IllegalAccessException, NoSuchFieldException {
 		double idlePower = RandomUtils.nextDouble(minIdlePower, maxIdlePower);
 		double realMinMaxPower = Math.max(idlePower, minMaxPower);
 		PMForwarder f = new PMForwarder((double) RandomUtils.nextInt(1, maxCoreCount),
-				SeedSyncer.centralRnd.nextDouble() * maxProcessingCap, RandomUtils.nextLong(minMem, maxMem),
+				RandomUtils.nextDouble(minProcessingCap, maxProcessingCap), RandomUtils.nextLong(minMem, maxMem),
 				getNewRepository(1), SeedSyncer.centralRnd.nextInt(maxOnDelay),
 				SeedSyncer.centralRnd.nextInt(maxOffDelay),
 				PowerTransitionGenerator.generateTransitions(RandomUtils.nextDouble(minMinPower, maxMinPower),
@@ -109,6 +135,23 @@ public class ExercisesBase {
 		return f;
 	}
 
+	public static void dropPM(PhysicalMachine pm) {
+		if (pm instanceof PMForwarder) {
+			pmfs.remove((PMForwarder) pm);
+		}
+	}
+
+	/**
+	 * Creates an IaaS service that uses an arbitrary PM and VM scheduler
+	 * 
+	 * @return
+	 * @throws IllegalArgumentException
+	 * @throws SecurityException
+	 * @throws InstantiationException
+	 * @throws IllegalAccessException
+	 * @throws InvocationTargetException
+	 * @throws NoSuchMethodException
+	 */
 	public static IaaSService getNewIaaSService() throws IllegalArgumentException, SecurityException,
 			InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
 		IaaSForwarder f = new IaaSForwarder(vmSchClasses[RandomUtils.nextInt(0, vmSchClasses.length)],
@@ -117,6 +160,21 @@ public class ExercisesBase {
 		return f;
 	}
 
+	/**
+	 * Creates a complex IaaS infrastructure with a predefined amount of random
+	 * physical machines. The IaaS will use undefined schedulers (randomly
+	 * chosen according to getNewIaaSService.
+	 * 
+	 * @param pmCount
+	 * @return
+	 * @throws IllegalArgumentException
+	 * @throws SecurityException
+	 * @throws InstantiationException
+	 * @throws IllegalAccessException
+	 * @throws InvocationTargetException
+	 * @throws NoSuchMethodException
+	 * @throws NoSuchFieldException
+	 */
 	public static IaaSService getComplexInfrastructure(final int pmCount)
 			throws IllegalArgumentException, SecurityException, InstantiationException, IllegalAccessException,
 			InvocationTargetException, NoSuchMethodException, NoSuchFieldException {

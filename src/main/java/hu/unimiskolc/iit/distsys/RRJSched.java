@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class JobtoStaticVMsetRR implements BasicJobScheduler {
+public class RRJSched implements BasicJobScheduler {
 
 	private final int defaultFallback = 100;
 	private int fallback = defaultFallback;
