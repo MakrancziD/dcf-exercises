@@ -1,11 +1,17 @@
 package hu.unimiskolc.iit.distsys;
 
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+
 import hu.mta.sztaki.lpds.cloud.simulator.Timed;
 import hu.mta.sztaki.lpds.cloud.simulator.iaas.IaaSService;
+import hu.mta.sztaki.lpds.cloud.simulator.iaas.PhysicalMachine;
 import hu.mta.sztaki.lpds.cloud.simulator.iaas.PhysicalMachine.ResourceAllocation;
 import hu.mta.sztaki.lpds.cloud.simulator.iaas.VirtualMachine;
 import hu.mta.sztaki.lpds.cloud.simulator.iaas.constraints.AlterableResourceConstraints;
+import hu.mta.sztaki.lpds.cloud.simulator.iaas.constraints.ConstantConstraints;
 import hu.mta.sztaki.lpds.cloud.simulator.iaas.constraints.ResourceConstraints;
 import hu.mta.sztaki.lpds.cloud.simulator.io.Repository;
 import hu.mta.sztaki.lpds.cloud.simulator.io.VirtualAppliance;
@@ -17,51 +23,52 @@ public class PMFiller implements FillInAllPMs
 	@Override
 	public void filler(IaaSService iaas, int vmCount)
 	{
+		ResourceConstraints rcAll = iaas.getCapacities();
+		long minMemory = Long.MAX_VALUE;
+		double minProcessing = Double.MAX_VALUE;
+		double minCores = Double.MAX_VALUE;
 
-		VirtualAppliance va = new VirtualAppliance("va",1,1);
+		Repository repo = iaas.repositories.get(0);
+		VirtualAppliance va = (VirtualAppliance) repo.contents().iterator().next();
+		
+		for (PhysicalMachine pm : iaas.machines) {
+			ResourceConstraints pmCaps = pm.getCapacities();
+			minMemory = Math.min(minMemory, pmCaps.getRequiredMemory());
+			minProcessing = Math.min(minProcessing, pmCaps.getRequiredProcessingPower());
+			minCores = Math.min(minCores, pmCaps.getRequiredCPUs());
 
-		System.out.println(va.toString());
+		}
+		
+		ConstantConstraints cc = new ConstantConstraints(rcAll.getRequiredCPUs() / vmCount, minProcessing, minMemory/ vmCount);
 
 		try
 		{
-			iaas.requestVM(va, iaas.getCapacities(), iaas.repositories.get(0), vmCount);
-		}
-		catch(Exception e){}
-
-
-		/*ResourceConstraints rc = new AlterableResourceConstraints(10, 10, 16);
-		
-		for(int i=0;i<iaas.machines.size();i++)
-		{
-			int vmPerIteration = vmCount/iaas.machines.size();
-			try{
-				ResourceConstraints asdf = iaas.machines.get(i).getCapacities();
-				System.out.println(iaas.machines.get(i).getState().toString());
-				if(iaas.machines.get(i).isRunning())iaas.machines.get(i).turnon();
-				Timed.simulateUntilLastEvent();
-				System.out.println(iaas.machines.get(i).getState().toString());
-				System.out.println(asdf.getRequiredCPUs()+" "+asdf.getRequiredProcessingPower()+" "+asdf.getRequiredMemory());
-				
-				ResourceConstraints rc2 = new AlterableResourceConstraints(
-						asdf.getRequiredCPUs()/vmPerIteration,
-						asdf.getRequiredProcessingPower()/vmPerIteration,
-						asdf.getRequiredMemory()/vmPerIteration);
-
-			VirtualMachine[] vmm = iaas.requestVM(va, rc2, iaas.machines.get(i).localDisk, vmPerIteration);
-			for(int j = 0;j<vmm.length;j++)
-			{
-				System.out.println(vmm[j].getState().toString());
-				System.out.println(vmm[j].toString());
-			}
-			}
-			catch(Exception e){System.out.println(e);}
+			iaas.requestVM(va, cc, repo, vmCount - iaas.machines.size());
+			Timed.simulateUntilLastEvent();
 			
-			System.out.println(iaas.machines.get(i).availableCapacities);
-		}*/
-		
-		Timed.simulateUntilLastEvent();
-		
+			ArrayList<PhysicalMachine> sortedPMs = new ArrayList<PhysicalMachine>(iaas.machines);
+			Comparator<PhysicalMachine> freeComp = new Comparator<PhysicalMachine>() {
+				public int compare(PhysicalMachine o1, PhysicalMachine o2) {
+					return (int) Math.signum(o2.freeCapacities
+							.getTotalProcessingPower()
+							- o1.freeCapacities.getTotalProcessingPower());
+				}
+			};
+			Collections.sort(sortedPMs, freeComp);
+
+			for (PhysicalMachine pm : sortedPMs) {
+
+				iaas.requestVM(
+						va,
+						new ConstantConstraints(
+								pm.freeCapacities.getRequiredCPUs() * pm.getCapacities() .getRequiredProcessingPower() / pm.freeCapacities.getRequiredProcessingPower(),
+								pm.freeCapacities.getRequiredProcessingPower(),
+								pm.freeCapacities.getRequiredMemory()), repo, 1);
+				Timed.simulateUntilLastEvent();
+		}
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
-	
 
 }
