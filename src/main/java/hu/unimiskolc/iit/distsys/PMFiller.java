@@ -1,6 +1,5 @@
 package hu.unimiskolc.iit.distsys;
 
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -28,7 +27,8 @@ public class PMFiller implements FillInAllPMs
 		Repository repo = iaas.repositories.get(0);
 		VirtualAppliance va = (VirtualAppliance) repo.contents().iterator().next();
 		
-		for (PhysicalMachine pm : iaas.machines) {
+		for (PhysicalMachine pm : iaas.machines) 
+		{
 			ResourceConstraints pmCaps = pm.getCapacities();
 			minMemory = Math.min(minMemory, pmCaps.getRequiredMemory());
 			minProcessing = Math.min(minProcessing, pmCaps.getRequiredProcessingPower());
@@ -44,26 +44,26 @@ public class PMFiller implements FillInAllPMs
 			Timed.simulateUntilLastEvent();
 			
 			ArrayList<PhysicalMachine> sortedPMs = new ArrayList<PhysicalMachine>(iaas.machines);
-			Comparator<PhysicalMachine> freeComp = new Comparator<PhysicalMachine>() {
-				public int compare(PhysicalMachine o1, PhysicalMachine o2) {
-					return (int) Math.signum(o2.freeCapacities
-							.getTotalProcessingPower()
-							- o1.freeCapacities.getTotalProcessingPower());
+			Comparator<PhysicalMachine> freeComp = new Comparator<PhysicalMachine>() 
+			{
+				public int compare(PhysicalMachine o1, PhysicalMachine o2) 
+				{
+					return (int) Math.signum(o2.freeCapacities.getTotalProcessingPower() - o1.freeCapacities.getTotalProcessingPower());
 				}
 			};
 			Collections.sort(sortedPMs, freeComp);
 
-			for (PhysicalMachine pm : sortedPMs) {
-
-				iaas.requestVM(
-						va,
-						new ConstantConstraints(
+			for (PhysicalMachine pm : sortedPMs) 
+			{
+				iaas.requestVM(va, new ConstantConstraints(
 								pm.freeCapacities.getRequiredCPUs() * pm.getCapacities() .getRequiredProcessingPower() / pm.freeCapacities.getRequiredProcessingPower(),
 								pm.freeCapacities.getRequiredProcessingPower(),
 								pm.freeCapacities.getRequiredMemory()), repo, 1);
 				Timed.simulateUntilLastEvent();
-		}
-		} catch (Exception e) {
+			}
+		} 
+		catch (Exception e) 
+		{
 			throw new RuntimeException(e);
 		}
 	}

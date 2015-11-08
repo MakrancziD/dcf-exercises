@@ -13,46 +13,59 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class RRJSched implements BasicJobScheduler {
-
+public class RRJSched implements BasicJobScheduler 
+{
 	private final int defaultFallback = 100;
 	private int fallback = defaultFallback;
+	
 	private int currentId = 0;
 	List<VirtualMachine> vmset;
-
-	public void handleJobRequestArrival(final Job j) {
+	
+	public void handleJobRequestArrival(final Job j) 
+	{
 		final BasicJobScheduler bjs = this;
 		int firstId = currentId;
 		boolean unscheduled = true;
-		do {
+		do 
+		{
 			VirtualMachine vm = vmset.get(currentId++);
 			currentId = currentId % vmset.size();
+
 			if (vm.underProcessing.isEmpty() && vm.toBeAdded.isEmpty()) {
 				try {
+
 					vm.newComputeTask(
-							j.getExectimeSecs()	* vm.getPerTickProcessingPower() * 1000,
+							j.getExectimeSecs() * vm.getPerTickProcessingPower() * 1000, 
 							ResourceConsumption.unlimitedProcessing,
-							new ConsumptionEventAdapter() {
+							new ConsumptionEventAdapter() 
+							{
 								@Override
-								public void conComplete() {
+								public void conComplete() 
+								{
 									j.completed();
 								}
 							});
 					j.started();
-
+					
 					fallback = defaultFallback;
 					unscheduled = false;
-				} catch (NetworkException ne) {
+				}
+				catch (NetworkException ne)
+				{
 					throw new RuntimeException("Cannot start new task", ne);
 				}
 			}
-			
-		} while (firstId != currentId && unscheduled);
-		if (unscheduled) {
 
-			new DeferredEvent(fallback) {
+		}
+		while (firstId != currentId && unscheduled);
+		
+		if (unscheduled) 
+		{
+			new DeferredEvent(fallback) 
+			{
 				@Override
-				protected void eventAction() {
+				protected void eventAction() 
+				{
 					bjs.handleJobRequestArrival(j);
 				}
 			};
@@ -60,11 +73,10 @@ public class RRJSched implements BasicJobScheduler {
 		}
 	}
 
-	public void setupVMset(Collection<VirtualMachine> vms) {
+	public void setupVMset(Collection<VirtualMachine> vms) 
+	{
 		vmset = new ArrayList<VirtualMachine>(vms);
 	}
 
-	public void setupIaaS(IaaSService iaas) {
-		
-	}
+	public void setupIaaS(IaaSService iaas) {}
 }

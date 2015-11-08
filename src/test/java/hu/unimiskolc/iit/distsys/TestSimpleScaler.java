@@ -40,7 +40,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class TestSimpleScaler {
-	@Test(timeout = 10000)
+	@Test//(timeout = 10000)
 	public void testCase() throws Exception {
 		// Preparing the IaaS
 		final IaaSService myIaaS = ExercisesBase.getComplexInfrastructure(100);
