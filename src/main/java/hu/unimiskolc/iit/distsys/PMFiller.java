@@ -56,7 +56,7 @@ public class PMFiller implements FillInAllPMs
 			for (PhysicalMachine pm : sortedPMs) 
 			{
 				iaas.requestVM(va, new ConstantConstraints(
-								pm.freeCapacities.getRequiredCPUs() * pm.getCapacities() .getRequiredProcessingPower() / pm.freeCapacities.getRequiredProcessingPower(),
+								pm.freeCapacities.getRequiredCPUs() * pm.getCapacities().getRequiredProcessingPower() / pm.freeCapacities.getRequiredProcessingPower(),
 								pm.freeCapacities.getRequiredProcessingPower(),
 								pm.freeCapacities.getRequiredMemory()), repo, 1);
 				Timed.simulateUntilLastEvent();

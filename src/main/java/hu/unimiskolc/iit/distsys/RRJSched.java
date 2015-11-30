@@ -26,14 +26,16 @@ public class RRJSched implements BasicJobScheduler
 		final BasicJobScheduler bjs = this;
 		int firstId = currentId;
 		boolean unscheduled = true;
+		
 		do 
 		{
 			VirtualMachine vm = vmset.get(currentId++);
 			currentId = currentId % vmset.size();
 
-			if (vm.underProcessing.isEmpty() && vm.toBeAdded.isEmpty()) {
-				try {
-
+			if (vm.underProcessing.isEmpty() && vm.toBeAdded.isEmpty()) 
+			{
+				try 
+				{
 					vm.newComputeTask(
 							j.getExectimeSecs() * vm.getPerTickProcessingPower() * 1000, 
 							ResourceConsumption.unlimitedProcessing,
